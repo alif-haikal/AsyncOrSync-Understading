@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+
+<body>
+
+</body>
+<script>
+    // create timer to show time in second 
+    class StopWatch {
+        timer = setInterval(() => {
+            console.info((new Date()).toLocaleTimeString())
+        }, 1000);
+
+        constructor() {
+            this.timer
+        }
+        stop(stopAfter) {
+            setTimeout(() => clearInterval(this.timer), stopAfter)
+        }
+    }
+    const stopWatch = new StopWatch()
+
+    // const log = (...args) => args.forEach((res) => console.log(`%c ${res} `, 'background: #222; color: #bada55'));
+    const log = (...args) => {
+        const messages = args.join(' ');
+        console.log(`%c ${messages}`, 'background: #222; color: #bada55')
+    }
+
+    // =====================
+    // code block execution
+    // =====================
+
+    // dohandle() // didnt works; internal function call another declaration that is not initialize yet
+
+    // declartion
+    const dohandle2 = () => {
+        log('asd')
+    }
+
+    dohandle() // works
+
+    // function declaretion
+    function dohandle() //works
+    {
+        dohandle2()
+    }
+
+    /*
+    didnt work; cause dohandle function to fail since it [dohandle] 
+    try to access assignment declaration[dohandle2] before dohandle2 being declared
+    
+    const dohandle2 = () => {
+        log('asd')
+    }
+    */
+
+    // =====================
+    // asyn await
+    // =====================
+
+    // async = asynchronous
+    // await = synchronous call for async function
+    // promise = asynchronous block operation
+
+    const futureSideEffect = (code, seq) => new Promise((resolve) => {
+        setTimeout(() => resolve(log(`${code}: ${seq}`)), seq * 1000)
+    })
+
+    // const futureObject = async (code, seq) => new Promise((resolve) => {
+    //     setTimeout(() => resolve(`${code}: ${seq}`), seq * 1000)
+    // })
+    const futureObject = (code, seq) => new Promise((resolve) => {
+        setTimeout(() => resolve(`${code}: ${seq}`), seq * 1000)
+    })
+
+
+    // js by default synchronous 
+    console.warn('JS DEFAULT SYNCHRONOUS BEHAVIOR')
+    /**
+     * JS by default are synchronous. 
+     * code execute one after another
+     */
+    console.log('1')
+    console.log('3')
+    console.log('2')
+
+    /**
+     * Callback in JS are by default asynchronous.
+     * For example Timer
+     */
+    // js timer asynchronous programming style
+    function jsAsynchronousTimer() {
+        console.warn('JS ASYNCHRONOUS TIMER (default async)')
+        setTimeout(() => log('JAT: 1'), 1000) // output in 1s
+        setTimeout(() => log('JAT: 3'), 3000) // output in 3s
+        setTimeout(() => log('JAT: 2'), 2000) // output in 2s
+    }
+
+    /**
+     * To read asynchronous event (late return), such as API call, 
+     * JS require synchronous callback
+     */
+
+    // synchronous using promise return as side effect
+    function synchronousPromiseSideEffect() {
+        console.warn('SYNCHRONOUS SIDE EFFECT USING PROMISE')
+        promiseSync(1) // output in 1s
+            .then(() => promiseSync(2)) // output in 2s + 1s
+            .then(() => promiseSync(3)) // output in 3s + 2s + 1s
+
+        function promiseSync(seq) {
+            return futureSideEffect('SSEUP', seq)
+        }
+    }
+
+    // synchronous using await return as side effect
+    async function synchronousAwaitSideEffect() {
+        console.warn('SYNCHRONOUS SIDE EFFECT USING AWAIT')
+        await awaitSync(1) // output in 1s
+        await awaitSync(2) // output in 2s + 1s
+        await awaitSync(3) // output in 3s + 2s + 1s
+
+        async function awaitSync(seq) {
+            return await futureSideEffect('SSEUA', seq)
+        }
+    }
+
+    // synchronous using promise return as future object
+    function synchronousPromiseFutureObject() {
+        console.warn('SYNCHRONOUS FUTURE OBJECT USING PROMISE')
+        promiseSync(1)
+            .then(log) // output in 1s
+            .then(() => promiseSync(2))
+            .then(log) // output in 2s + 1s
+            .then(() => promiseSync(3))
+            .then(log) // output in 3s + 2s + 1s
+
+        /**
+         * this code style does not allow broken chain 
+         * for example :-
+        promiseSync(1)
+            .then(log) // output in 1s
+        
+        promiseSync(2)
+            .then(log) // output in 2s + 1s
+
+        promiseSync(3)
+            .then(log) // output in 3s + 2s + 1s
+
+         * code as above will remove queue effect between all promises 
+         * on the other hand, code as above are use widely as asynchronous 
+         */
+
+        function promiseSync(seq) {
+            return futureObject('SFOUP', seq)
+        }
+    }
+
+    // synchronous using await return as future object
+    async function synchronousAwaitFutureObject() {
+        console.warn('SYNCHRONOUS FUTURE OBJECT USING AWAIT')
+
+        // notes: intentionally reverse order to demo synchronous sequential flow
+
+        const c = await awaitSync(3)
+        log(c) // output in 3s
+
+        const b = await awaitSync(2)
+        log(b) // output in 2s + 1s
+
+        const a = await awaitSync(1)
+        log(a) // output in 1s + 2s + 3s 
+
+        log(a, b, c)
+
+        async function awaitSync(seq) {
+            return await futureObject('SFOUA', seq)
+        }
+    }
+
+    // asynchronous using promise return as future object
+    function asynchronousPromiseFutureObject() {
+        console.warn('ASYNCHRONOUS FUTURE OBJECT USING PROMISE')
+        promiseSync(1)
+            .then(log) // output in 1s
+
+        promiseSync(3)
+            .then(log) // output in 3s
+
+        promiseSync(2)
+            .then(log) // output in 2s
+
+
+        /**
+         * this code style does not allow broken chain 
+         * for example :-
+        promiseSync(1)
+            .then(log) // output in 1s
+        
+        promiseSync(2)
+            .then(log) // output in 2s + 1s
+
+        promiseSync(3)
+            .then(log) // output in 3s + 2s + 1s
+
+         * code as above will remove queue effect between all promises 
+         * on the other hand, code as above are use widely as asynchronous 
+         */
+
+        function promiseSync(seq) {
+            return futureObject('AFOUP', seq)
+        }
+    }
+
+    let timer = 1000
+
+    // delay execution after 1s to allow CODE BLOCK EXECUTION example run
+    setTimeout(() => jsAsynchronousTimer(), timer);
+
+    // delay execution after 5s to allow previous example run
+    setTimeout(() => synchronousPromiseSideEffect(), timer += 5000);
+
+    // delay execution after 7s to allow previous example run
+    setTimeout(() => synchronousAwaitSideEffect(), timer += 7000);
+
+    // delay execution after 7s to allow previous example run
+    setTimeout(() => synchronousPromiseFutureObject(), timer += 7000);
+
+    // delay execution after 7s to allow previous example run
+    setTimeout(() => synchronousAwaitFutureObject(), timer += 7000);
+
+    // delay execution after 7s to allow previous example run
+    setTimeout(() => asynchronousPromiseFutureObject(), timer += 7000);
+
+
+    // delay execution after 7s to allow previous example run
+    // running all synchronous function call (callback) in asynchronous (parallel : non blocking)
+    setTimeout(() => {
+        jsAsynchronousTimer()
+        synchronousPromiseSideEffect()
+        synchronousAwaitSideEffect()
+        synchronousPromiseFutureObject()
+        synchronousAwaitFutureObject()
+    }, timer += 4000)
+
+    // stop after 12s to allow all example run
+    stopWatch.stop(timer += 7000)
+
+    /**
+     * Why use synchronous?
+     * JS callback by default are async. This block the possibilities
+     * to create dependencies between code block that are async in return (late return).
+     * Thus, to create such dependencies, promise and await was introduced.
+     *
+     * Despite the fact that promise and await seems identical to each other,
+     * they are both good for different use case.
+     *
+     * Promise allow fluent style code in which its nuance are norm to english speaker.
+     *
+     * Await allow code block separation. This features open a large possibility in OOP & SOLID style code.
+     *
+     */
+
+
+
+</script>
+
+</html>
